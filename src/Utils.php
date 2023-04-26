@@ -406,6 +406,7 @@ class Utils
      */
     public static function jsonMethodToString($json)
     {
+        $typeComponents = [];
         if ($json instanceof stdClass) {
             // one way to change whole json stdClass to array type
             // $jsonString = json_encode($json);
@@ -421,13 +422,23 @@ class Utils
             // another way to change json to array type but not whole json stdClass
             $json = (array) $json;
             $typeName = [];
-
-            foreach ($json['inputs'] as $param) {
+            foreach ($json['inputs'] as $i => $param) {
                 if (isset($param->type)) {
                     $typeName[] = $param->type;
                 }
+                if (isset($param->components)) {
+                    $typeComponents[$i] = array_map(function($val) {
+                        return $val['type'];
+                    }, $param->components);
+                }
             }
-            return $json['name'] . '(' . implode(',', $typeName) . ')';
+            $params = [];
+            foreach($typeName as $i => $type) {
+                if(isset($typeComponents[$i])) {
+                    $params[] = '(' . implode(',', $typeComponents[$i]) . ')[]';
+                }
+            }
+            return $json['name'] . '(' . implode(',', $params) . ')';
         } elseif (!is_array($json)) {
             throw new InvalidArgumentException('jsonMethodToString json must be array or stdClass.');
         }
